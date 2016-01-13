@@ -25,6 +25,28 @@
     <camelContext id="fedora3-solr-indexer" xmlns="http://camel.apache.org/schema/spring"
       xmlns:foxml="info:fedora/fedora-system:def/foxml#">
 
+      <restConfiguration component="servlet"/>
+
+      <rest path="/">
+        <description>Rest endpoint to reindex a specific PID</description>
+        <get uri="/{pid}">
+          <to uri="seda:to_jms?exchangePattern=InOnly"/>
+        </get>
+      </rest>
+
+      <route id="push-to-jms-queue">
+        <from uri="seda:to_jms"/>
+        <setProperty propertyName="date"><simple>${date:now:YYYY-MM-dd'T'HH:mm:ss'Z'}</simple></setProperty>
+        <setProperty propertyName="pid"><simple>${in.header.pid}</simple></setProperty>
+        <to uri="mustache:classpath://jms-template.mustache"/>
+        <to uri="log:?logger=myLogger&amp;level=TRACE"/>
+        <removeHeaders pattern="*"/>
+        <setHeader headerName="pid"><simple>${property.pid}</simple></setHeader>
+        <setHeader headerName="methodName"><constant>indexObject</constant></setHeader>
+        <to uri="activemq:{{activemq.queuename}}?jmsMessageType=Text&amp;transferException=true"/>
+        <log message="Added ${property.pid} to JMS queue" loggingLevel="INFO" loggerRef="myLogger"/>
+      </route>
+
       <route id="fedora-aggregator">
         <description>Fedora Message aggregator (10 sec inactivity timeout)</description>
         <from uri="activemq:{{activemq.queuename}}"/>
@@ -55,10 +77,15 @@
                   <simple>{{fcrepo.basePath}}/objects/$simple{header.pid}/objectXML</simple>
               </setHeader>
               <log message="Getting foxml ${header.pid}" loggingLevel="DEBUG" loggerRef="myLogger"/>
-              <to uri="http4://{{fcrepo.baseUrl}}/?authUsername={{fcrepo.authUser}}&amp;authPassword={{fcrepo.authPassword}}"/>
-              <convertBodyTo type="org.w3c.dom.Document"/>
-              <to uri="log:?logger=myLogger&amp;level=TRACE"/>
-              <to uri="seda:fedora.insert"/>
+              <doTry>
+                <to uri="http4://{{fcrepo.baseUrl}}/?authUsername={{fcrepo.authUser}}&amp;authPassword={{fcrepo.authPassword}}"/>
+                <convertBodyTo type="org.w3c.dom.Document"/>
+                <to uri="log:?logger=myLogger&amp;level=TRACE"/>
+                <to uri="seda:fedora.insert"/>
+                <doCatch>
+                  <log message="Error getting foxml for ${header.pid}: ${exception.message}" loggingLevel="ERROR" loggerRef="myLogger"/>
+                </doCatch>
+              </doTry>
             </otherwise>
         </choice>
       </route>
