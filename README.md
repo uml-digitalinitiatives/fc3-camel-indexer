@@ -26,5 +26,18 @@ You will almost certainly need to override the ```fedora3.indexer.xslt``` option
 
 You can specify a file path with ```-Dfedora3.indexer.xslt=file:///full/path/to/xslt```
 
+## Reindexer
+This webapp also deploys a REST endpoint at /&lt;context&gt;/reindex/. Where &lt;context&gt; is the deployed name (default: fedora3-solr-indexer).
+
+This endpoint accepts GET requests of the form /&lt;context&gt;/reindex/&lt;PID&gt;
+
+The PID supplied is passed onto the configured JMS topic/queue to be indexed. No response is given.
+
+For example:
+```
+curl -XGET http://localhost:8080/fedora3-solr-indexer/reindex/islandora%3A200
+```
+
+
 ## Credit
 All credit to [acoburn](https://github.com/acoburn) for this is just an implementation of his camel route wrapped in a war deployment.
