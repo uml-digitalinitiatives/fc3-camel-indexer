@@ -220,10 +220,6 @@
           <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-security</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.apache.cxf</groupId>
-          <artifactId>cxf-bundle</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     
