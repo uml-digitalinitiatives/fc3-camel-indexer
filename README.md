@@ -13,7 +13,7 @@ Replace the aging GSearch indexer with a simple camel route that could be extend
 Uses several overridable java options.
 
 * fedora3.indexer.fedoraUrl - The URL of your Fedora instance (default: localhost:8080/)
-* fedora3.indexer.fedoraPath - The base path at the above URL for fedora (default: /fedora)
+* fedora3.indexer.fedoraPath - The base context path at the above URL for fedora (default: /fedora)
 * fedora3.indexer.fedoraUser User with API-M privileges to Fedora (default: fedoraAdmin)
 * fedora3.indexer.fedoraPass - Password for above user (default: fedoraAdmin)
 * fedora3.indexer.solrUrl - The URL of your Solr instance (default: localhost:8080/solr)
@@ -31,7 +31,7 @@ This webapp also deploys a REST endpoint at /&lt;context&gt;/reindex/. Where &lt
 
 This endpoint accepts GET requests of the form /&lt;context&gt;/reindex/&lt;PID&gt;
 
-The PID supplied is passed onto the configured JMS topic/queue to be indexed. No response is given.
+The PID supplied is passed directly into the indexing process. Url encoding of the colon is required. A ```HTTP/1.1 200 OK``` response is returned regardless of the re-indexing outcome.
 
 For example:
 ```
